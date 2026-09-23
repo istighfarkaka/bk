@@ -1,1 +1,978 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rapor Digital Dipsa</title>
+  
+  <!-- CDN SheetJS untuk Membaca & Membuat File Excel/CSV -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: #f0f2f5; height: 100vh; overflow: hidden; }
+    
+    /* HALAMAN LOGIN */
+    .screen-login-container { 
+      display: flex; 
+      justify-content: center; 
+      align-items: center; 
+      min-height: 100vh; 
+      padding: 20px; 
+      background-image: url('https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEhydqKQ1JuvtQPYiLfxBx5e8wQ5BuN4WDK_FZMTmjsaYhLqbef03r9J7chJKML58BBoxE52W5rvJcgDAWG7WGnEnNSEIkVK7ReFuqfedmNf83cJZma_wkxNYE5wpQCiOba6PuGy_jKVaUer2XrMQH216Pfk0V9_pgDmVRP7daDePltHGkg7k3RAylX9LtW4/s2816/Gemini_Generated_Image_gc9ddfgc9ddfgc9d.jpg'); 
+      background-size: cover; 
+      background-position: center; 
+      background-repeat: no-repeat; 
+    }
+
+    .login-card { 
+      background: rgba(255, 255, 255, 0.94); 
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      border-radius: 16px; 
+      box-shadow: 0 12px 32px rgba(0,0,0,0.25); 
+      width: 100%; 
+      max-width: 420px; 
+      padding: 30px; 
+      border: 1px solid rgba(255, 255, 255, 0.4);
+    }
+    
+    .header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #eef2f5; padding-bottom: 15px; }
+    .logo-sekolah { width: 90px; height: auto; margin-bottom: 10px; }
+    .header h2 { color: #1a73e8; font-size: 22px; text-transform: uppercase; }
+    .header p { color: #555; font-size: 13px; margin-top: 5px; font-weight: 500; }
+
+    .form-group { margin-bottom: 15px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; color: #333; margin-bottom: 5px; }
+    .form-control { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; outline: none; background-color: #fff; }
+    .form-control:focus { border-color: #1a73e8; box-shadow: 0 0 0 3px rgba(26,115,232,0.2); }
+
+    .password-wrapper { position: relative; width: 100%; }
+    .password-wrapper input { padding-right: 40px; }
+    .toggle-password { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #666; font-size: 16px; user-select: none; }
+
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+    .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 18px; margin-bottom: 25px; }
+
+    .btn-submit { width: 100%; background: #1a73e8; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; }
+    .btn-submit:hover { background: #1557b0; }
+    .btn-success { background: #10b981; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 14px; cursor: pointer; transition: 0.2s; width: 100%; }
+    .btn-success:hover { background: #059669; }
+    .btn-info { background: #0284c7; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; transition: 0.2s; width: 100%; margin-bottom: 10px; }
+    .btn-info:hover { background: #0369a1; }
+
+    .badge-role { display: inline-block; background: #e8f0fe; color: #1a73e8; padding: 4px 12px; border-radius: 20px; font-weight: bold; font-size: 11px; text-transform: uppercase; }
+    .loading { text-align: center; color: #1a73e8; font-weight: bold; font-size: 14px; margin-top: 10px; display: none; }
+    .error-msg { color: #ef4444; font-size: 13px; text-align: center; margin-top: 10px; font-weight: bold; }
+    
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* LAYOUT UTAMA DASHBOARD */
+    .app-container { display: flex; height: 100vh; overflow: hidden; }
+    
+    /* SIDEBAR STYLE */
+    .sidebar { width: 260px; background-color: #1e293b; color: #fff; display: flex; flex-direction: column; transition: all 0.3s ease; z-index: 100; flex-shrink: 0; }
+    .sidebar.collapsed { width: 70px; }
+    .sidebar.collapsed .sidebar-user-info,
+    .sidebar.collapsed .menu-text,
+    .sidebar.collapsed .sidebar-section-title { display: none; }
+    .sidebar.collapsed .sidebar-menu li a { justify-content: center; padding: 14px 0; }
+
+    .sidebar-header-profile { padding: 15px; background: #0f172a; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #334155; }
+    .sidebar-avatar { width: 42px; height: 42px; border-radius: 50%; background: #1a73e8; display: flex; align-items: center; justify-content: center; font-weight: bold; font-size: 16px; color: #fff; flex-shrink: 0; }
+    .sidebar-user-info h4 { font-size: 13px; color: #f8fafc; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; }
+    .sidebar-user-info p { font-size: 11px; color: #94a3b8; }
+
+    .sidebar-menu { list-style: none; padding: 10px 0; overflow-y: auto; flex-grow: 1; }
+    .sidebar-menu li a { display: flex; align-items: center; gap: 14px; padding: 12px 20px; color: #cbd5e1; text-decoration: none; font-size: 13px; transition: 0.2s; cursor: pointer; white-space: nowrap; }
+    .sidebar-menu li a:hover, .sidebar-menu li a.active { background-color: #334155; color: #fff; border-left: 4px solid #1a73e8; }
+    .sidebar-menu li a span.menu-icon { font-size: 16px; width: 20px; text-align: center; }
+
+    .sidebar-section-title { font-size: 10px; text-transform: uppercase; color: #64748b; padding: 15px 20px 5px; font-weight: bold; letter-spacing: 0.5px; }
+
+    /* MAIN CONTENT AREA */
+    .main-area { flex-grow: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; background-color: #f1f5f9; }
+    .top-navbar { height: 60px; background: #ffffff; border-bottom: 1px solid #e2e8f0; display: flex; align-items: center; justify-content: space-between; padding: 0 20px; flex-shrink: 0; }
+    .nav-left { display: flex; align-items: center; gap: 15px; }
+    .toggle-sidebar-btn { background: none; border: none; font-size: 20px; cursor: pointer; color: #334155; padding: 5px; border-radius: 4px; }
+    .toggle-sidebar-btn:hover { background: #f1f5f9; }
+    .app-brand { font-size: 16px; font-weight: bold; color: #1e293b; display: flex; align-items: center; gap: 8px; }
+    
+    .content-viewport { padding: 25px; flex-grow: 1; overflow-y: auto; }
+    .content-panel { display: none; }
+    .content-panel.active { display: block; }
+
+    /* WIDGET STATISTIK */
+    .stat-card { background: #fff; border-radius: 12px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); display: flex; align-items: center; justify-content: space-between; border: 1px solid #e2e8f0; }
+    .stat-card .stat-info h3 { font-size: 28px; font-weight: 800; color: #1e293b; margin-bottom: 4px; }
+    .stat-card .stat-info p { font-size: 13px; font-weight: 600; color: #64748b; }
+    .stat-card .stat-icon { width: 52px; height: 52px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 24px; }
+
+    .stat-card.blue { border-top: 4px solid #2563eb; }
+    .stat-card.blue .stat-icon { background-color: #eff6ff; color: #2563eb; }
+    .stat-card.green { border-top: 4px solid #16a34a; }
+    .stat-card.green .stat-icon { background-color: #f0fdf4; color: #16a34a; }
+    .stat-card.orange { border-top: 4px solid #d97706; }
+    .stat-card.orange .stat-icon { background-color: #fffbeb; color: #d97706; }
+    .stat-card.purple { border-top: 4px solid #9333ea; }
+    .stat-card.purple .stat-icon { background-color: #faf5ff; color: #9333ea; }
+
+    .welcome-banner { background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #fff; padding: 25px; border-radius: 12px; margin-bottom: 25px; }
+    .welcome-banner h2 { font-size: 20px; font-weight: 700; margin-bottom: 8px; color: #f8fafc; }
+    .welcome-banner p { font-size: 13px; color: #cbd5e1; line-height: 1.5; }
+
+    .section-card { background: #fff; border-radius: 10px; padding: 20px; margin-bottom: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.04); }
+    .card-header-flex { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+
+    /* STYLING DESAIN HALAMAN RAPOR PRINT & PREVIEW */
+    .rapor-preview-container { background: #fff; padding: 40px; border-radius: 8px; max-width: 800px; margin: 0 auto; box-shadow: 0 4px 20px rgba(0,0,0,0.08); border: 1px solid #cbd5e1; color: #000; }
+    
+    /* COVER DEPAN (HALAMAN 1) */
+    .cover-page { text-align: center; min-height: 900px; display: flex; flex-direction: column; justify-content: space-between; padding: 40px 20px; box-sizing: border-box; page-break-after: always; }
+    .cover-logo { width: 130px; height: auto; margin: 0 auto 30px auto; }
+    .cover-title-main { font-size: 22px; font-weight: bold; letter-spacing: 2px; margin-bottom: 5px; }
+    .cover-title-sub { font-size: 18px; font-weight: bold; margin-bottom: 25px; text-transform: uppercase; }
+    .cover-box-jenjang { border: 2px solid #000; padding: 10px 20px; font-size: 18px; font-weight: bold; display: inline-block; margin: 0 auto 50px auto; text-transform: uppercase; width: 85%; }
+    .cover-field-box { border: 2px solid #000; padding: 10px; font-size: 16px; font-weight: bold; margin: 8px auto 30px auto; width: 85%; text-align: center; }
+    .cover-footer { font-size: 14px; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; margin-top: 40px; }
+
+    /* IDENTITAS SEKOLAH (HALAMAN 2) */
+    .school-id-page { min-height: 900px; padding: 40px 20px; box-sizing: border-box; page-break-after: always; }
+    .school-id-title { text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 40px; text-transform: uppercase; }
+    .school-id-table { width: 100%; border-collapse: collapse; font-size: 14px; line-height: 2.2; }
+    .school-id-table td { border: none !important; vertical-align: top; }
+
+    /* IDENTITAS SISWA (HALAMAN 3) */
+    .student-id-page { min-height: 900px; padding: 20px; box-sizing: border-box; page-break-after: always; }
+    .student-id-title { text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 25px; text-transform: uppercase; }
+    .student-id-table { width: 100%; border-collapse: collapse; font-size: 12px; line-height: 1.8; margin-bottom: 25px; }
+    .student-id-table td { border: none !important; vertical-align: top; }
+    
+    .pas-foto-box { width: 110px; height: 145px; border: 1px solid #000; display: flex; align-items: center; justify-content: center; font-size: 11px; text-align: center; color: #555; background: #fafafa; }
+
+    /* MODAL POPUP */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 999; }
+    .modal-box { background: #fff; width: 90%; max-width: 850px; max-height: 90vh; overflow-y: auto; padding: 25px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+    .modal-header h3 { font-size: 16px; color: #1a73e8; }
+    .close-btn { cursor: pointer; font-size: 20px; font-weight: bold; color: #888; }
+
+    @media print {
+      body * { visibility: hidden; }
+      .rapor-preview-container, .rapor-preview-container * { visibility: visible; }
+      .rapor-preview-container { position: absolute; left: 0; top: 0; width: 100%; box-shadow: none; border: none; padding: 0; }
+      .no-print { display: none !important; }
+      .cover-page, .school-id-page, .student-id-page { page-break-after: always; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HALAMAN LOGIN -->
+  <div class="screen active" id="screen-login">
+    <div class="screen-login-container">
+      <div class="login-card">
+        <div class="header">
+          <img src="https://blogger.googleusercontent.com/img/a/AVvXsEhGC7yqna5IBWq3UP5ANl6N61wf-krRp8igTPpLzQdxSYj4EA96cNhWdCnCZYAxaeT_O8Bkxe_PBLtetYGzGMTkSdQ1PcIKeMg2UOsJtt1wqrvvu7j_z2NwC5G9ulu1YlQxiZ3yTf54NBzTewN7Nxzl5N6eniNxzhTaR_fVUMq5EKPlx75Aad5ARBDIdYNF" alt="Logo Sekolah" class="logo-sekolah">
+          <h2>Rapor Digital Dipsa</h2>
+          <p>Silakan login untuk mengakses portal</p>
+        </div>
+        <form id="form-login" onsubmit="event.preventDefault(); window.prosesLogin();">
+          <div class="form-group">
+            <label>Username / NIS</label>
+            <input type="text" id="username" class="form-control" placeholder="Masukkan Username / NIS" required autocomplete="off">
+          </div>
+          <div class="form-group">
+            <label>Password</label>
+            <div class="password-wrapper">
+              <input type="password" id="password" class="form-control" placeholder="Masukkan Password" required>
+              <span class="toggle-password" onclick="window.togglePasswordVisibility()">👁️</span>
+            </div>
+          </div>
+          <button type="submit" class="btn-submit" id="btn-login">Masuk Aplikasi</button>
+        </form>
+        <div class="loading" id="loading-login">Memeriksa data...</div>
+        <div class="error-msg" id="err-login"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HALAMAN DASHBOARD -->
+  <div class="screen" id="screen-dashboard">
+    <div class="app-container">
+      
+      <!-- SIDEBAR MENU -->
+      <nav class="sidebar" id="sidebar-nav">
+        <div class="sidebar-header-profile">
+          <div class="sidebar-avatar" id="sidebar-initials">AD</div>
+          <div class="sidebar-user-info">
+            <h4 id="dash-nama-sidebar">Administrator</h4>
+            <p id="dash-role-sidebar">Admin Utama</p>
+          </div>
+        </div>
+
+        <ul class="sidebar-menu" id="menu-list-container">
+          <!-- Menu dinamis di-render lewat JS -->
+        </ul>
+      </nav>
+
+      <!-- AREA KONTEN UTAMA -->
+      <div class="main-area">
+        <header class="top-navbar">
+          <div class="nav-left">
+            <button class="toggle-sidebar-btn" onclick="window.toggleSidebar()" title="Buka/Tutup Menu">☰</button>
+            <div class="app-brand" id="dash-app-brand">SMK DIPONEGORO 1 PURWOKERTO</div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="badge-role" style="background:#f3e8ff; color:#7e22ce;" id="dash-info-semester">Semester Ganjil | 2026/2027</span>
+            <span class="badge-role" id="dash-role">ADMIN</span>
+          </div>
+        </header>
+
+        <div class="content-viewport">
+          
+          <!-- PANEL 0: BERANDA UTAMA -->
+          <div class="content-panel active" id="panel-beranda">
+            <div class="welcome-banner">
+              <h2 id="text-welcome-title">Selamat Datang!</h2>
+              <p id="text-welcome-sub">Sistem Informasi Rapor Digital SMK Diponegoro 1 Purwokerto. Kelola data akademik, input nilai, serta cetak rapor digital secara terintegrasi.</p>
+            </div>
+
+            <!-- STATISTIK REALTIME -->
+            <div class="grid-4" id="container-stat-dashboard">
+              <div class="stat-card blue">
+                <div class="stat-info"><h3 id="stat-count-guru">0</h3><p>Jumlah Guru & GTK</p></div>
+                <div class="stat-icon">👨‍🏫</div>
+              </div>
+              <div class="stat-card green">
+                <div class="stat-info"><h3 id="stat-count-siswa">0</h3><p>Jumlah Peserta Didik</p></div>
+                <div class="stat-icon">🎓</div>
+              </div>
+              <div class="stat-card orange">
+                <div class="stat-info"><h3 id="stat-count-kelas">0</h3><p>Jumlah Rombel / Kelas</p></div>
+                <div class="stat-icon">🏫</div>
+              </div>
+              <div class="stat-card purple">
+                <div class="stat-info"><h3 id="stat-count-mapel">0</h3><p>Mata Pelajaran Aktif</p></div>
+                <div class="stat-icon">📚</div>
+              </div>
+            </div>
+
+            <!-- PENGATURAN IDENTITAS SEKOLAH & COVER DINAMIS (WAKA / ADMIN) -->
+            <div class="section-card" id="card-setting-sekolah" style="display: none;">
+              <div class="section-title" style="color:#1a73e8; font-size:16px; margin-bottom:12px; font-weight:bold;">🏫 Pengaturan Identitas Sekolah & Layout Cover Rapor</div>
+              <p style="font-size:13px; color:#666; margin-bottom:15px;">Pengaturan ini menentukan identitas resmi sekolah dan desain Cover Depan Rapor Digital.</p>
+              
+              <form onsubmit="event.preventDefault(); window.simpanIdentitasSekolah();">
+                <div style="font-weight:bold; font-size:13px; color:#1e293b; margin-bottom:8px;">1. Identitas Utama Sekolah</div>
+                <div class="grid-2">
+                  <div class="form-group">
+                    <label>Nama Sekolah :</label>
+                    <input type="text" id="input-nama-sekolah" class="form-control" required>
+                  </div>
+                  <div class="form-group">
+                    <label>NPSN :</label>
+                    <input type="text" id="input-npsn-sekolah" class="form-control" placeholder="Contoh: 20330443">
+                  </div>
+                </div>
+                <div class="grid-3">
+                  <div class="form-group">
+                    <label>Alamat Jalan :</label>
+                    <input type="text" id="input-alamat-sekolah" class="form-control" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Desa / Kelurahan :</label>
+                    <input type="text" id="input-desa-sekolah" class="form-control" placeholder="Contoh: Berkoh">
+                  </div>
+                  <div class="form-group">
+                    <label>Kecamatan :</label>
+                    <input type="text" id="input-kecamatan-sekolah" class="form-control" placeholder="Contoh: Purwokerto Selatan">
+                  </div>
+                </div>
+                <div class="grid-3">
+                  <div class="form-group">
+                    <label>Kabupaten / Kota :</label>
+                    <input type="text" id="input-kabupaten-sekolah" class="form-control" placeholder="Contoh: Banyumas">
+                  </div>
+                  <div class="form-group">
+                    <label>Provinsi :</label>
+                    <input type="text" id="input-provinsi-sekolah" class="form-control" placeholder="Contoh: Jawa Tengah">
+                  </div>
+                  <div class="form-group">
+                    <label>Kode Pos :</label>
+                    <input type="text" id="input-kodepos-sekolah" class="form-control" placeholder="Contoh: 53146">
+                  </div>
+                </div>
+                <div class="grid-2">
+                  <div class="form-group">
+                    <label>Website Resmi :</label>
+                    <input type="text" id="input-website-sekolah" class="form-control" placeholder="Contoh: smkdiponegoro1.pwt.sch.id">
+                  </div>
+                  <div class="form-group">
+                    <label>E-mail Sekolah :</label>
+                    <input type="text" id="input-email-sekolah" class="form-control" placeholder="Contoh: smkdiponegoro1.pwt@gmail.com">
+                  </div>
+                </div>
+
+                <div style="font-weight:bold; font-size:13px; color:#1e293b; margin-top:10px; margin-bottom:8px;">2. Kepala Sekolah</div>
+                <div class="grid-2">
+                  <div class="form-group">
+                    <label>Nama Kepala Sekolah :</label>
+                    <input type="text" id="input-nama-kepsek" class="form-control" required>
+                  </div>
+                  <div class="form-group">
+                    <label>NIP Kepala Sekolah :</label>
+                    <input type="text" id="input-nip-kepsek" class="form-control" required>
+                  </div>
+                </div>
+
+                <div style="font-weight:bold; font-size:13px; color:#1a73e8; margin-top:10px; margin-bottom:8px;">3. Tampilan Halaman Cover Rapor Dinamis</div>
+                <div class="form-group">
+                  <label>URL / Link Gambar Logo Sekolah (Cover):</label>
+                  <input type="text" id="input-logo-cover" class="form-control" placeholder="Contoh: https://blogger.googleusercontent.com/img/.../logo.png">
+                </div>
+                <div class="grid-2">
+                  <div class="form-group">
+                    <label>Judul Jenjang Rapor (Box Cover):</label>
+                    <input type="text" id="input-judul-cover" class="form-control" placeholder="Contoh: SEKOLAH MENENGAH KEJURUAN (SMK)" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Teks Instansi / Footer Cover:</label>
+                    <input type="text" id="input-footer-cover" class="form-control" placeholder="Contoh: KEMENTERIAN PENDIDIKAN DAN KEBUDAYAAN REPUBLIK INDONESIA" required>
+                  </div>
+                </div>
+
+                <button type="submit" class="btn-submit" style="background-color: #10b981; max-width: 250px; margin-top: 10px;">💾 Simpan Pengaturan Sekolah</button>
+              </form>
+            </div>
+          </div>
+
+          <!-- PANEL IDENTITAS SISWA (GURU / WALI / SISWA MANDIRI) -->
+          <div class="content-panel" id="panel-identitas-siswa">
+            <div class="section-card">
+              <div class="card-header-flex">
+                <div class="section-title" style="color:#1a73e8; font-size:16px;">📑 Form Kelengkapan Data Identitas Peserta Didik</div>
+                <div id="status-kunci-identitas-badge" class="badge-role" style="background:#fef3c7; color:#b45309;">
+                  Status: Belum Diverifikasi
+                </div>
+              </div>
+              
+              <p style="font-size:13px; color:#666; margin-bottom:15px;">
+                Isilah data identitas siswa berikut secara lengkap untuk dicetak pada Lembar Identitas Rapor Resmi (Halaman Cover, Sekolah & Siswa).
+              </p>
+
+              <!-- FORM IDENTITAS RANGKUMAN -->
+              <form onsubmit="event.preventDefault(); window.simpanIdentitasLengkapSiswa();">
+                <div class="grid-2" id="container-pilih-siswa-identitas" style="display:none; background:#eff6ff; padding:10px; border-radius:6px; margin-bottom:15px;">
+                  <div class="form-group" style="margin-bottom:0;">
+                    <label style="color:#1e40af;">Pilih Siswa (Wali Kelas / Admin):</label>
+                    <select id="select-siswa-target-identitas" class="form-control" onchange="window.loadIdentitasSiswaSelected(this.value)">
+                      <option value="">-- Pilih Siswa --</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div style="font-weight:bold; font-size:14px; color:#1e293b; margin-bottom:10px;">A. Data Pribadi Siswa</div>
+                <div class="grid-2">
+                  <div class="form-group">
+                    <label>Nama Lengkap Siswa:</label>
+                    <input type="text" id="id-siswa-nama" class="form-control" required readonly style="background:#f1f5f9;">
+                  </div>
+                  <div class="form-group">
+                    <label>NIS / NISN:</label>
+                    <input type="text" id="id-siswa-nis-nisn" class="form-control" required readonly style="background:#f1f5f9;">
+                  </div>
+                </div>
+
+                <div class="grid-3">
+                  <div class="form-group">
+                    <label>Tempat Lahir:</label>
+                    <input type="text" id="id-siswa-tempat-lahir" class="form-control" placeholder="Contoh: Banyumas" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Tanggal Lahir:</label>
+                    <input type="date" id="id-siswa-tgl-lahir" class="form-control" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Jenis Kelamin:</label>
+                    <select id="id-siswa-jk" class="form-control" required>
+                      <option value="Laki-Laki">Laki-Laki</option>
+                      <option value="Perempuan">Perempuan</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div class="grid-3">
+                  <div class="form-group">
+                    <label>Agama:</label>
+                    <input type="text" id="id-siswa-agama" class="form-control" placeholder="Contoh: Islam" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Pendidikan Sebelumnya (SMP/MTs):</label>
+                    <input type="text" id="id-siswa-sekolah-asal" class="form-control" placeholder="Contoh: SMP Negeri 1 Purwokerto">
+                  </div>
+                  <div class="form-group">
+                    <label>URL Pas Foto Siswa (3x4):</label>
+                    <input type="text" id="id-siswa-foto-url" class="form-control" placeholder="Link gambar pas foto (opsional)">
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label>Alamat Lengkap Peserta Didik:</label>
+                  <input type="text" id="id-siswa-alamat" class="form-control" placeholder="Contoh: Jl. Diponegoro No. 12, Purwokerto" required>
+                </div>
+
+                <div style="font-weight:bold; font-size:14px; color:#1e293b; margin-top:15px; margin-bottom:10px;">B. Data Orang Tua / Wali</div>
+                <div class="grid-2">
+                  <div class="form-group">
+                    <label>Nama Ayah Kandung:</label>
+                    <input type="text" id="id-ortu-nama-ayah" class="form-control" placeholder="Nama Ayah" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Nama Ibu Kandung:</label>
+                    <input type="text" id="id-ortu-nama-ibu" class="form-control" placeholder="Nama Ibu" required>
+                  </div>
+                </div>
+
+                <div class="grid-2">
+                  <div class="form-group">
+                    <label>Pekerjaan Ayah:</label>
+                    <input type="text" id="id-ortu-kerja-ayah" class="form-control" placeholder="Contoh: Wiraswasta" required>
+                  </div>
+                  <div class="form-group">
+                    <label>Pekerjaan Ibu:</label>
+                    <input type="text" id="id-ortu-kerja-ibu" class="form-control" placeholder="Contoh: Ibu Rumah Tangga" required>
+                  </div>
+                </div>
+
+                <div class="grid-3">
+                  <div class="form-group">
+                    <label>Jalan / RT RW Orang Tua:</label>
+                    <input type="text" id="id-ortu-jalan" class="form-control" placeholder="Contoh: Jl. Karangbenda No. 4">
+                  </div>
+                  <div class="form-group">
+                    <label>Kelurahan / Desa Orang Tua:</label>
+                    <input type="text" id="id-ortu-desa" class="form-control" placeholder="Contoh: Berkoh">
+                  </div>
+                  <div class="form-group">
+                    <label>Kecamatan Orang Tua:</label>
+                    <input type="text" id="id-ortu-kecamatan" class="form-control" placeholder="Contoh: Purwokerto Selatan">
+                  </div>
+                </div>
+
+                <div class="grid-2">
+                  <div class="form-group">
+                    <label>Kabupaten / Kota Orang Tua:</label>
+                    <input type="text" id="id-ortu-kabupaten" class="form-control" placeholder="Contoh: Banyumas">
+                  </div>
+                  <div class="form-group">
+                    <label>Provinsi Orang Tua:</label>
+                    <input type="text" id="id-ortu-provinsi" class="form-control" placeholder="Contoh: Jawa Tengah">
+                  </div>
+                </div>
+
+                <div style="font-weight:bold; font-size:13px; color:#64748b; margin-top:10px; margin-bottom:8px;">C. Data Wali Peserta Didik (Jika Ada)</div>
+                <div class="grid-3">
+                  <div class="form-group">
+                    <label>Nama Wali:</label>
+                    <input type="text" id="id-wali-nama" class="form-control" placeholder="-">
+                  </div>
+                  <div class="form-group">
+                    <label>Pekerjaan Wali:</label>
+                    <input type="text" id="id-wali-kerja" class="form-control" placeholder="-">
+                  </div>
+                  <div class="form-group">
+                    <label>Alamat Wali:</label>
+                    <input type="text" id="id-wali-alamat" class="form-control" placeholder="-">
+                  </div>
+                </div>
+
+                <div style="display:flex; gap:10px; margin-top:15px; flex-wrap:wrap;">
+                  <button type="submit" class="btn-submit" id="btn-save-identitas" style="max-width:240px; background:#10b981;">💾 Simpan Data Identitas</button>
+                  <button type="button" class="btn-info" id="btn-preview-identitas" style="max-width:240px; margin-bottom:0;" onclick="window.triggerPreviewIdentitasAktif()">📄 Preview Cetak Identitas</button>
+                </div>
+              </form>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL PREVIEW & CETAK RAPOR 3 HALAMAN IDENTITAS & KOVER -->
+  <div class="modal-overlay" id="modal-preview-rapor-identitas">
+    <div class="modal-box" style="max-width:900px;">
+      <div class="modal-header no-print">
+        <h3>📄 Preview Lembar Identitas Rapor Resmi (3 Halaman)</h3>
+        <div>
+          <button class="btn-success" style="width:auto; padding:6px 14px;" onclick="window.print()">🖨️ Cetak Identitas (PDF)</button>
+          <span class="close-btn" onclick="window.tutupModalPreviewIdentitas()" style="margin-left:15px;">&times;</span>
+        </div>
+      </div>
+
+      <div class="rapor-preview-container" id="area-identitas-cetak">
+        
+        <!-- HALAMAN 1: COVER DEPAN -->
+        <div class="cover-page">
+          <div>
+            <img id="cv-logo-img" src="" class="cover-logo" alt="Logo Sekolah">
+            <div class="cover-title-main">RAPOR</div>
+            <div class="cover-title-sub">PESERTA DIDIK</div>
+            <div class="cover-box-jenjang" id="cv-judul-jenjang">SEKOLAH MENENGAH KEJURUAN (SMK)</div>
+          </div>
+
+          <div>
+            <p style="font-size:14px; margin-bottom:5px;">Nama Peserta Didik :</p>
+            <div class="cover-field-box" id="cv-nama-siswa">-</div>
+
+            <p style="font-size:14px; margin-bottom:5px; margin-top:20px;">NIS / NISN</p>
+            <div class="cover-field-box" id="cv-nis-nisn">-</div>
+          </div>
+
+          <div class="cover-footer" id="cv-footer-instansi">
+            KEMENTERIAN PENDIDIKAN DAN KEBUDAYAAN<br>REPUBLIK INDONESIA
+          </div>
+        </div>
+
+        <!-- HALAMAN 2: IDENTITAS SEKOLAH -->
+        <div class="school-id-page">
+          <div class="school-id-title">
+            RAPOR PESERTA DIDIK<br>
+            <span id="sc-judul-jenjang">SEKOLAH MENENGAH KEJURUAN (SMK)</span>
+          </div>
+
+          <table class="school-id-table">
+            <tr><td style="width:180px;">Nama Sekolah</td><td style="width:20px;">:</td><td id="sc-nama-sekolah"><b>SMK Diponegoro 1 Purwokerto</b></td></tr>
+            <tr><td>NPSN</td><td>:</td><td id="sc-npsn">20330443</td></tr>
+            <tr><td>Alamat Sekolah</td><td>:</td><td id="sc-alamat">Jl. Karangbenda Raya, Berkoh</td></tr>
+            <tr><td>Kode Pos</td><td>:</td><td id="sc-kodepos">53146</td></tr>
+            <tr><td>Desa / Kelurahan</td><td>:</td><td id="sc-desa">Berkoh</td></tr>
+            <tr><td>Kecamatan</td><td>:</td><td id="sc-kecamatan">Purwokerto Selatan</td></tr>
+            <tr><td>Kabupaten / Kota</td><td>:</td><td id="sc-kabupaten">Banyumas</td></tr>
+            <tr><td>Provinsi</td><td>:</td><td id="sc-provinsi">Jawa Tengah</td></tr>
+            <tr><td>Website</td><td>:</td><td id="sc-website">smkdiponegoro1.pwt.sch.id</td></tr>
+            <tr><td>E-mail</td><td>:</td><td id="sc-email">smkdiponegoro1.pwt@gmail.com</td></tr>
+          </table>
+        </div>
+
+        <!-- HALAMAN 3: IDENTITAS PESERTA DIDIK -->
+        <div class="student-id-page">
+          <div class="student-id-title">IDENTITAS PESERTA DIDIK</div>
+
+          <table class="student-id-table">
+            <tr><td style="width:190px;">1. Nama Peserta Didik</td><td style="width:15px;">:</td><td id="id-view-nama"><b>-</b></td></tr>
+            <tr><td>2. NIS / NISN</td><td>:</td><td id="id-view-nis-nisn">-</td></tr>
+            <tr><td>3. Tempat, Tanggal Lahir</td><td>:</td><td id="id-view-ttl">-</td></tr>
+            <tr><td>4. Jenis Kelamin</td><td>:</td><td id="id-view-jk">-</td></tr>
+            <tr><td>5. Agama</td><td>:</td><td id="id-view-agama">-</td></tr>
+            <tr><td>6. Pendidikan Sebelumnya</td><td>:</td><td id="id-view-sekolah-asal">-</td></tr>
+            <tr><td>7. Alamat Peserta Didik</td><td>:</td><td id="id-view-alamat">-</td></tr>
+            
+            <tr><td colspan="3" style="font-weight:bold; padding-top:10px;">8. Nama Orang Tua</td></tr>
+            <tr><td style="padding-left:15px;">a. Ayah</td><td>:</td><td id="id-view-ayah">-</td></tr>
+            <tr><td style="padding-left:15px;">b. Ibu</td><td>:</td><td id="id-view-ibu">-</td></tr>
+
+            <tr><td colspan="3" style="font-weight:bold; padding-top:10px;">9. Pekerjaan Orang Tua</td></tr>
+            <tr><td style="padding-left:15px;">a. Ayah</td><td>:</td><td id="id-view-kerja-ayah">-</td></tr>
+            <tr><td style="padding-left:15px;">b. Ibu</td><td>:</td><td id="id-view-kerja-ibu">-</td></tr>
+
+            <tr><td colspan="3" style="font-weight:bold; padding-top:10px;">10. Alamat Orang Tua</td></tr>
+            <tr><td style="padding-left:15px;">a. Jalan</td><td>:</td><td id="id-view-ortu-jalan">-</td></tr>
+            <tr><td style="padding-left:15px;">b. Kelurahan/Desa</td><td>:</td><td id="id-view-ortu-desa">-</td></tr>
+            <tr><td style="padding-left:15px;">c. Kecamatan</td><td>:</td><td id="id-view-ortu-kecamatan">-</td></tr>
+            <tr><td style="padding-left:15px;">d. Kabupaten / Kota</td><td>:</td><td id="id-view-ortu-kabupaten">-</td></tr>
+            <tr><td style="padding-left:15px;">e. Provinsi</td><td>:</td><td id="id-view-ortu-provinsi">-</td></tr>
+
+            <tr><td colspan="3" style="font-weight:bold; padding-top:10px;">11. Wali Peserta Didik</td></tr>
+            <tr><td style="padding-left:15px;">a. Nama</td><td>:</td><td id="id-view-wali-nama">-</td></tr>
+            <tr><td style="padding-left:15px;">b. Pekerjaan</td><td>:</td><td id="id-view-wali-kerja">-</td></tr>
+            <tr><td style="padding-left:15px;">c. Alamat</td><td>:</td><td id="id-view-wali-alamat">-</td></tr>
+          </table>
+
+          <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-top:20px;">
+            <div class="pas-foto-box" id="id-view-foto-container">
+              <span>Pas Foto<br>3 x 4</span>
+            </div>
+            
+            <div style="text-align:center; font-size:12px;">
+              <p id="id-view-tgl-cetak">Purwokerto, 22 Oktober 2026</p>
+              <p>Kepala Sekolah,</p>
+              <br><br><br>
+              <p><u id="id-view-nama-kepsek" style="font-weight:bold;">-</u></p>
+              <p>NIP. <span id="id-view-nip-kepsek">-</span></p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- SCRIPT FIREBASE UTAMA & LOGIKA JAVASCRIPT LENGKAP -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, collection, query, where, getDocs, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyDnPyMzuu4Qo2mZhORxZh3aTUm-TAFmzzU",
+      authDomain: "rapor-c7c48.firebaseapp.com",
+      projectId: "rapor-c7c48",
+      storageBucket: "rapor-c7c48.firebasestorage.app",
+      messagingSenderId: "1059367167032",
+      appId: "1:1059367167032:web:eaa4527d3ed3f05ae3b2cd"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let currentUser = null;
+    let dataSekolahGlobal = {
+      nama_sekolah: "SMK Diponegoro 1 Purwokerto",
+      npsn: "20330443",
+      alamat_sekolah: "Jl. Karangbenda Raya, Berkoh",
+      desa_sekolah: "Berkoh",
+      kecamatan_sekolah: "Purwokerto Selatan",
+      kabupaten_sekolah: "Banyumas",
+      provinsi_sekolah: "Jawa Tengah",
+      kodepos_sekolah: "53146",
+      website_sekolah: "smkdiponegoro1.pwt.sch.id",
+      email_sekolah: "smkdiponegoro1.pwt@gmail.com",
+      nama_kepsek: "Drs. H. Ahmad Sudrajat, M.Pd.",
+      nip_kepsek: "19750812 200003 1 002",
+      semester_aktif: "Ganjil",
+      tahun_ajaran: "2026/2027",
+      tanggal_rapor: "Purwokerto, 22 Oktober 2026",
+      logo_cover_url: "https://blogger.googleusercontent.com/img/a/AVvXsEhGC7yqna5IBWq3UP5ANl6N61wf-krRp8igTPpLzQdxSYj4EA96cNhWdCnCZYAxaeT_O8Bkxe_PBLtetYGzGMTkSdQ1PcIKeMg2UOsJtt1wqrvvu7j_z2NwC5G9ulu1YlQxiZ3yTf54NBzTewN7Nxzl5N6eniNxzhTaR_fVUMq5EKPlx75Aad5ARBDIdYNF",
+      judul_cover: "SEKOLAH MENENGAH KEJURUAN (SMK)",
+      footer_cover: "KEMENTERIAN PENDIDIKAN DAN KEBUDAYAAN REPUBLIK INDONESIA"
+    };
+
+    let dataSiswaActive = null;
+
+    // TOGGLE SHOW/HIDE PASSWORD
+    window.togglePasswordVisibility = function() {
+      const p = document.getElementById("password");
+      p.type = p.type === "password" ? "text" : "password";
+    };
+
+    // NAVIGASI SIDEBAR
+    window.toggleSidebar = function() {
+      document.getElementById("sidebar-nav").classList.toggle("collapsed");
+    };
+
+    window.switchPanel = function(panelId) {
+      document.querySelectorAll(".content-panel").forEach(p => p.classList.remove("active"));
+      document.querySelectorAll(".sidebar-menu a").forEach(a => a.classList.remove("active"));
+      
+      const targetPanel = document.getElementById(panelId);
+      if(targetPanel) targetPanel.classList.add("active");
+
+      const targetMenu = document.getElementById(`menu-btn-${panelId}`);
+      if(targetMenu) targetMenu.classList.add("active");
+    };
+
+    // PROSES LOGIN LENGKAP
+    window.prosesLogin = async function() {
+      const u = document.getElementById("username").value.trim();
+      const p = document.getElementById("password").value.trim();
+      const errBox = document.getElementById("err-login");
+      const loadBox = document.getElementById("loading-login");
+
+      errBox.innerText = "";
+      loadBox.style.display = "block";
+
+      try {
+        // 1. CEK HARDCODED ADMIN DEFAULT
+        if ((u === "admin" || u === "1597") && p === "dipsa2026") {
+          currentUser = { username: u, nama: "Administrator Dipsa", role: "ADMIN", kelas: "Semua Kelas" };
+          masukDashboard(currentUser);
+          return;
+        }
+
+        // 2. CEK FIREBASE FIRESTORE (USER / GURU / SISWA)
+        const qUser = query(collection(db, "users"), where("username", "==", u), where("password", "==", p));
+        const snapUser = await getDocs(qUser);
+
+        if (!snapUser.empty) {
+          const uDoc = snapUser.docs[0].data();
+          currentUser = { id: snapUser.docs[0].id, ...uDoc };
+          masukDashboard(currentUser);
+          return;
+        }
+
+        // 3. CEK FIREBASE SISWA (NIS/NISN LOGIN)
+        const qSiswa = query(collection(db, "siswa"), where("nis", "==", u), where("password", "==", p));
+        const snapSiswa = await getDocs(qSiswa);
+
+        if (!snapSiswa.empty) {
+          const sDoc = snapSiswa.docs[0].data();
+          currentUser = { id: snapSiswa.docs[0].id, username: sDoc.nis, nama: sDoc.nama_siswa || sDoc.Nama, role: "SISWA", kelas: sDoc.kelas || sDoc.Kelas, dataFull: sDoc };
+          masukDashboard(currentUser);
+          return;
+        }
+
+        throw new Error("Username/NIS atau Password salah!");
+
+      } catch (err) {
+        errBox.innerText = err.message;
+      } finally {
+        loadBox.style.display = "none";
+      }
+    };
+
+    function masukDashboard(user) {
+      document.getElementById("screen-login").classList.remove("active");
+      document.getElementById("screen-dashboard").classList.add("active");
+
+      document.getElementById("dash-nama-sidebar").innerText = user.nama || user.username;
+      document.getElementById("dash-role-sidebar").innerText = user.role || "USER";
+      document.getElementById("dash-role").innerText = user.role || "USER";
+      document.getElementById("sidebar-initials").innerText = (user.nama || user.username).substring(0,2).toUpperCase();
+
+      renderSidebarMenu(user.role);
+
+      if(user.role === "ADMIN" || user.role === "WAKA") {
+        document.getElementById("card-setting-sekolah").style.display = "block";
+      } else {
+        document.getElementById("card-setting-sekolah").style.display = "none";
+      }
+
+      if(user.role === "SISWA") {
+        setupFormIdentitasSiswa(user.dataFull);
+      }
+    }
+
+    function renderSidebarMenu(role) {
+      const container = document.getElementById("menu-list-container");
+      let html = `
+        <li><a id="menu-btn-panel-beranda" class="active" onclick="window.switchPanel('panel-beranda')"><span class="menu-icon">🏠</span><span class="menu-text">Beranda</span></a></li>
+        <li><a id="menu-btn-panel-identitas-siswa" onclick="window.switchPanel('panel-identitas-siswa')"><span class="menu-icon">📑</span><span class="menu-text">Identitas Rapor</span></a></li>
+      `;
+
+      if(role === "ADMIN" || role === "WAKA" || role === "WALI_KELAS") {
+        html += `
+          <div class="sidebar-section-title">Manajemen Akademik</div>
+          <li><a onclick="alert('Fitur Akademik Aktif')"><span class="menu-icon">🏫</span><span class="menu-text">Data Kelas & Mapel</span></a></li>
+          <li><a onclick="alert('Fitur Backup Drive Aktif')"><span class="menu-icon">☁️</span><span class="menu-text">Backup Rapor Drive</span></a></li>
+        `;
+      }
+
+      html += `
+        <div class="sidebar-section-title">Akun</div>
+        <li><a onclick="location.reload()"><span class="menu-icon">🚪</span><span class="menu-text">Keluar (Logout)</span></a></li>
+      `;
+
+      container.innerHTML = html;
+    }
+
+    function setupFormIdentitasSiswa(sData) {
+      dataSiswaActive = sData;
+      document.getElementById("id-siswa-nama").value = sData.nama_siswa || sData.Nama || "";
+      document.getElementById("id-siswa-nis-nisn").value = `${sData.nis || sData.NIS || ''} / ${sData.nisn || sData.NISN || ''}`;
+      document.getElementById("id-siswa-tempat-lahir").value = sData.tempat_lahir || "";
+      document.getElementById("id-siswa-tgl-lahir").value = sData.tanggal_lahir || "";
+      document.getElementById("id-siswa-jk").value = sData.jenis_kelamin || "Laki-Laki";
+      document.getElementById("id-siswa-agama").value = sData.agama || "";
+      document.getElementById("id-siswa-sekolah-asal").value = sData.sekolah_asal || "";
+      document.getElementById("id-siswa-foto-url").value = sData.foto_url || "";
+      document.getElementById("id-siswa-alamat").value = sData.alamat_siswa || "";
+
+      document.getElementById("id-ortu-nama-ayah").value = sData.nama_ayah || "";
+      document.getElementById("id-ortu-nama-ibu").value = sData.nama_ibu || "";
+      document.getElementById("id-ortu-kerja-ayah").value = sData.kerja_ayah || "";
+      document.getElementById("id-ortu-kerja-ibu").value = sData.kerja_ibu || "";
+
+      document.getElementById("id-ortu-jalan").value = sData.ortu_jalan || "";
+      document.getElementById("id-ortu-desa").value = sData.ortu_desa || "";
+      document.getElementById("id-ortu-kecamatan").value = sData.ortu_kecamatan || "";
+      document.getElementById("id-ortu-kabupaten").value = sData.ortu_kabupaten || "";
+      document.getElementById("id-ortu-provinsi").value = sData.ortu_provinsi || "";
+
+      document.getElementById("id-wali-nama").value = sData.wali_nama || "";
+      document.getElementById("id-wali-kerja").value = sData.wali_kerja || "";
+      document.getElementById("id-wali-alamat").value = sData.wali_alamat || "";
+    }
+
+    window.simpanIdentitasLengkapSiswa = async function() {
+      try {
+        const payload = {
+          tempat_lahir: document.getElementById("id-siswa-tempat-lahir").value,
+          tanggal_lahir: document.getElementById("id-siswa-tgl-lahir").value,
+          jenis_kelamin: document.getElementById("id-siswa-jk").value,
+          agama: document.getElementById("id-siswa-agama").value,
+          sekolah_asal: document.getElementById("id-siswa-sekolah-asal").value,
+          foto_url: document.getElementById("id-siswa-foto-url").value,
+          alamat_siswa: document.getElementById("id-siswa-alamat").value,
+          nama_ayah: document.getElementById("id-ortu-nama-ayah").value,
+          nama_ibu: document.getElementById("id-ortu-nama-ibu").value,
+          kerja_ayah: document.getElementById("id-ortu-kerja-ayah").value,
+          kerja_ibu: document.getElementById("id-ortu-kerja-ibu").value,
+          ortu_jalan: document.getElementById("id-ortu-jalan").value,
+          ortu_desa: document.getElementById("id-ortu-desa").value,
+          ortu_kecamatan: document.getElementById("id-ortu-kecamatan").value,
+          ortu_kabupaten: document.getElementById("id-ortu-kabupaten").value,
+          ortu_provinsi: document.getElementById("id-ortu-provinsi").value,
+          wali_nama: document.getElementById("id-wali-nama").value,
+          wali_kerja: document.getElementById("id-wali-kerja").value,
+          wali_alamat: document.getElementById("id-wali-alamat").value
+        };
+
+        if(currentUser && currentUser.role === "SISWA" && currentUser.id) {
+          await setDoc(doc(db, "siswa", currentUser.id), payload, { merge: true });
+          dataSiswaActive = { ...dataSiswaActive, ...payload };
+          alert("Data Identitas Berhasil Disimpan!");
+        } else {
+          alert("Simpan berhasil (Mode Simulasi)!");
+        }
+      } catch(err) { alert("Gagal menyimpan: " + err.message); }
+    };
+
+    window.simpanIdentitasSekolah = async function() {
+      try {
+        await setDoc(doc(db, "pengaturan_sekolah", "identitas"), {
+          nama_sekolah: document.getElementById("input-nama-sekolah").value.trim(),
+          npsn: document.getElementById("input-npsn-sekolah").value.trim(),
+          alamat_sekolah: document.getElementById("input-alamat-sekolah").value.trim(),
+          desa_sekolah: document.getElementById("input-desa-sekolah").value.trim(),
+          kecamatan_sekolah: document.getElementById("input-kecamatan-sekolah").value.trim(),
+          kabupaten_sekolah: document.getElementById("input-kabupaten-sekolah").value.trim(),
+          provinsi_sekolah: document.getElementById("input-provinsi-sekolah").value.trim(),
+          kodepos_sekolah: document.getElementById("input-kodepos-sekolah").value.trim(),
+          website_sekolah: document.getElementById("input-website-sekolah").value.trim(),
+          email_sekolah: document.getElementById("input-email-sekolah").value.trim(),
+          nama_kepsek: document.getElementById("input-nama-kepsek").value.trim(),
+          nip_kepsek: document.getElementById("input-nip-kepsek").value.trim(),
+          logo_cover_url: document.getElementById("input-logo-cover").value.trim(),
+          judul_cover: document.getElementById("input-judul-cover").value.trim(),
+          footer_cover: document.getElementById("input-footer-cover").value.trim()
+        }, { merge: true });
+        alert("Pengaturan Sekolah & Cover Rapor berhasil disimpan!");
+      } catch (err) { alert("Gagal menyimpan: " + err.message); }
+    };
+
+    function muatIdentitasSekolahRealtime() {
+      onSnapshot(doc(db, "pengaturan_sekolah", "identitas"), (docSnap) => {
+        if (docSnap.exists()) {
+          dataSekolahGlobal = { ...dataSekolahGlobal, ...docSnap.data() };
+          
+          if(document.getElementById("input-nama-sekolah")) document.getElementById("input-nama-sekolah").value = dataSekolahGlobal.nama_sekolah || "";
+          if(document.getElementById("input-npsn-sekolah")) document.getElementById("input-npsn-sekolah").value = dataSekolahGlobal.npsn || "";
+          if(document.getElementById("input-alamat-sekolah")) document.getElementById("input-alamat-sekolah").value = dataSekolahGlobal.alamat_sekolah || "";
+          if(document.getElementById("input-desa-sekolah")) document.getElementById("input-desa-sekolah").value = dataSekolahGlobal.desa_sekolah || "";
+          if(document.getElementById("input-kecamatan-sekolah")) document.getElementById("input-kecamatan-sekolah").value = dataSekolahGlobal.kecamatan_sekolah || "";
+          if(document.getElementById("input-kabupaten-sekolah")) document.getElementById("input-kabupaten-sekolah").value = dataSekolahGlobal.kabupaten_sekolah || "";
+          if(document.getElementById("input-provinsi-sekolah")) document.getElementById("input-provinsi-sekolah").value = dataSekolahGlobal.provinsi_sekolah || "";
+          if(document.getElementById("input-kodepos-sekolah")) document.getElementById("input-kodepos-sekolah").value = dataSekolahGlobal.kodepos_sekolah || "";
+          if(document.getElementById("input-website-sekolah")) document.getElementById("input-website-sekolah").value = dataSekolahGlobal.website_sekolah || "";
+          if(document.getElementById("input-email-sekolah")) document.getElementById("input-email-sekolah").value = dataSekolahGlobal.email_sekolah || "";
+          if(document.getElementById("input-nama-kepsek")) document.getElementById("input-nama-kepsek").value = dataSekolahGlobal.nama_kepsek || "";
+          if(document.getElementById("input-nip-kepsek")) document.getElementById("input-nip-kepsek").value = dataSekolahGlobal.nip_kepsek || "";
+          if(document.getElementById("input-logo-cover")) document.getElementById("input-logo-cover").value = dataSekolahGlobal.logo_cover_url || "";
+          if(document.getElementById("input-judul-cover")) document.getElementById("input-judul-cover").value = dataSekolahGlobal.judul_cover || "";
+          if(document.getElementById("input-footer-cover")) document.getElementById("input-footer-cover").value = dataSekolahGlobal.footer_cover || "";
+        }
+      });
+    }
+
+    window.triggerPreviewIdentitasAktif = function() {
+      const dataS = dataSiswaActive || {
+        nama_siswa: document.getElementById("id-siswa-nama").value || "Siswa Contoh",
+        nis: "1512",
+        nisn: "3085189471",
+        tempat_lahir: document.getElementById("id-siswa-tempat-lahir").value || "Banyumas",
+        tanggal_lahir: document.getElementById("id-siswa-tgl-lahir").value || "2008-05-12",
+        jenis_kelamin: document.getElementById("id-siswa-jk").value,
+        agama: document.getElementById("id-siswa-agama").value || "Islam",
+        sekolah_asal: document.getElementById("id-siswa-sekolah-asal").value || "SMP Negeri 1",
+        alamat_siswa: document.getElementById("id-siswa-alamat").value || "Purwokerto",
+        nama_ayah: document.getElementById("id-ortu-nama-ayah").value || "Ayah Contoh",
+        nama_ibu: document.getElementById("id-ortu-nama-ibu").value || "Ibu Contoh",
+        kerja_ayah: document.getElementById("id-ortu-kerja-ayah").value || "Wiraswasta",
+        kerja_ibu: document.getElementById("id-ortu-kerja-ibu").value || "Ibu Rumah Tangga",
+        ortu_jalan: document.getElementById("id-ortu-jalan").value || "Jl. Raya",
+        ortu_desa: document.getElementById("id-ortu-desa").value || "Berkoh",
+        ortu_kecamatan: document.getElementById("id-ortu-kecamatan").value || "Purwokerto Selatan",
+        ortu_kabupaten: document.getElementById("id-ortu-kabupaten").value || "Banyumas",
+        ortu_provinsi: document.getElementById("id-ortu-provinsi").value || "Jawa Tengah",
+        wali_nama: document.getElementById("id-wali-nama").value || "-",
+        wali_kerja: document.getElementById("id-wali-kerja").value || "-",
+        wali_alamat: document.getElementById("id-wali-alamat").value || "-",
+        foto_url: document.getElementById("id-siswa-foto-url").value || ""
+      };
+      
+      preview3HalamanIdentitasRapor(dataS);
+    };
+
+    /* PREVIEW & CETAK 3 HALAMAN IDENTITAS RAPOR */
+    function preview3HalamanIdentitasRapor(dataS) {
+      // COVER DEPAN
+      document.getElementById("cv-logo-img").src = dataSekolahGlobal.logo_cover_url;
+      document.getElementById("cv-judul-jenjang").innerText = (dataSekolahGlobal.judul_cover || "SEKOLAH MENENGAH KEJURUAN (SMK)").toUpperCase();
+      document.getElementById("cv-nama-siswa").innerText = dataS.nama_siswa || "-";
+      document.getElementById("cv-nis-nisn").innerText = `${dataS.nis || '-'} / ${dataS.nisn || '-'}`;
+      document.getElementById("cv-footer-instansi").innerHTML = (dataSekolahGlobal.footer_cover || "KEMENTERIAN PENDIDIKAN DAN KEBUDAYAAN REPUBLIK INDONESIA").replace(/\n/g, '<br>');
+
+      // IDENTITAS SEKOLAH
+      document.getElementById("sc-judul-jenjang").innerText = (dataSekolahGlobal.judul_cover || "SEKOLAH MENENGAH KEJURUAN (SMK)").toUpperCase();
+      document.getElementById("sc-nama-sekolah").innerHTML = `<b>${dataSekolahGlobal.nama_sekolah || '-'}</b>`;
+      document.getElementById("sc-npsn").innerText = dataSekolahGlobal.npsn || "-";
+      document.getElementById("sc-alamat").innerText = dataSekolahGlobal.alamat_sekolah || "-";
+      document.getElementById("sc-kodepos").innerText = dataSekolahGlobal.kodepos_sekolah || "-";
+      document.getElementById("sc-desa").innerText = dataSekolahGlobal.desa_sekolah || "-";
+      document.getElementById("sc-kecamatan").innerText = dataSekolahGlobal.kecamatan_sekolah || "-";
+      document.getElementById("sc-kabupaten").innerText = dataSekolahGlobal.kabupaten_sekolah || "-";
+      document.getElementById("sc-provinsi").innerText = dataSekolahGlobal.provinsi_sekolah || "-";
+      document.getElementById("sc-website").innerText = dataSekolahGlobal.website_sekolah || "-";
+      document.getElementById("sc-email").innerText = dataSekolahGlobal.email_sekolah || "-";
+
+      // IDENTITAS SISWA
+      document.getElementById("id-view-nama").innerHTML = `<b>${dataS.nama_siswa || '-'}</b>`;
+      document.getElementById("id-view-nis-nisn").innerText = `${dataS.nis || '-'} / ${dataS.nisn || '-'}`;
+      document.getElementById("id-view-ttl").innerText = `${dataS.tempat_lahir || '-'}, ${dataS.tanggal_lahir || '-'}`;
+      document.getElementById("id-view-jk").innerText = dataS.jenis_kelamin || "-";
+      document.getElementById("id-view-agama").innerText = dataS.agama || "-";
+      document.getElementById("id-view-sekolah-asal").innerText = dataS.sekolah_asal || "-";
+      document.getElementById("id-view-alamat").innerText = dataS.alamat_siswa || "-";
+
+      document.getElementById("id-view-ayah").innerText = dataS.nama_ayah || "-";
+      document.getElementById("id-view-ibu").innerText = dataS.nama_ibu || "-";
+      document.getElementById("id-view-kerja-ayah").innerText = dataS.kerja_ayah || "-";
+      document.getElementById("id-view-kerja-ibu").innerText = dataS.kerja_ibu || "-";
+
+      document.getElementById("id-view-ortu-jalan").innerText = dataS.ortu_jalan || "-";
+      document.getElementById("id-view-ortu-desa").innerText = dataS.ortu_desa || "-";
+      document.getElementById("id-view-ortu-kecamatan").innerText = dataS.ortu_kecamatan || "-";
+      document.getElementById("id-view-ortu-kabupaten").innerText = dataS.ortu_kabupaten || "-";
+      document.getElementById("id-view-ortu-provinsi").innerText = dataS.ortu_provinsi || "-";
+
+      document.getElementById("id-view-wali-nama").innerText = dataS.wali_nama || "-";
+      document.getElementById("id-view-wali-kerja").innerText = dataS.wali_kerja || "-";
+      document.getElementById("id-view-wali-alamat").innerText = dataS.wali_alamat || "-";
+
+      const boxFoto = document.getElementById("id-view-foto-container");
+      if(dataS.foto_url) {
+        boxFoto.innerHTML = `<img src="${dataS.foto_url}" style="width:100%; height:100%; object-fit:cover;">`;
+      } else {
+        boxFoto.innerHTML = `<span>Pas Foto<br>3 x 4</span>`;
+      }
+
+      document.getElementById("id-view-tgl-cetak").innerText = dataSekolahGlobal.tanggal_rapor || "Purwokerto, 22 Oktober 2026";
+      document.getElementById("id-view-nama-kepsek").innerText = dataSekolahGlobal.nama_kepsek || "-";
+      document.getElementById("id-view-nip-kepsek").innerText = dataSekolahGlobal.nip_kepsek || "-";
+
+      document.getElementById("modal-preview-rapor-identitas").style.display = "flex";
+    }
+
+    window.tutupModalPreviewIdentitas = function() {
+      document.getElementById("modal-preview-rapor-identitas").style.display = "none";
+    };
+
+    // Inisialisasi realtime
+    muatIdentitasSekolahRealtime();
+  </script>
+</body>
+</html>
